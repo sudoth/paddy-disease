@@ -157,15 +157,16 @@ plots/         # графики
 
 ---
 
-## Setup окружения
+## Setup
 
 ### Требования
 
-- Python 3.13
-- `uv`
-- `git`
-- `docker` (для Triton)
-- `kaggle` CLI (для скачивания датасета)
+- **Python 3.13**
+- **uv**
+- **git**
+- **docker** (для Triton)
+- **kaggle CLI** (для скачивания датасета, используется как fallback/первичная загрузка)
+- (опционально) **NVIDIA GPU + drivers + nvidia-container-toolkit** (для TensorRT и GPU Triton)
 
 ### Установка зависимостей
 
@@ -180,15 +181,15 @@ uv run pre-commit install
 uv run pre-commit run -a
 ```
 
----
+### Настройка Kaggle API token
 
-## Данные: Kaggle и DVC
+Нужен файл `kaggle.json`:
 
-### Kaggle API token
-
-Нужен `kaggle.json`:
-
-- Linux: `~/.kaggle/kaggle.json` (права `chmod 600`)
+- Linux: `~/.kaggle/kaggle.json`
+- Права:
+  ```bash
+  chmod 600 ~/.kaggle/kaggle.json
+  ```
 
 Проверка:
 
@@ -196,88 +197,142 @@ uv run pre-commit run -a
 kaggle --version
 ```
 
-### Скачать данные и подключить DVC
+### Загрузка данных и DVC
+
+Проект использует **DVC** для хранения/восстановления данных.
+Команда ниже делает следующее:
+
+- если данные отсутствуют → пытается восстановить через `dvc pull`
+- если `dvc pull` не смог восстановить → скачивает датасет с Kaggle и раскладывает в `data/raw`
 
 ```bash
 uv run python -m paddy_disease.commands download_data
 ```
 
-Структура `data/raw`:
+Ожидаемая структура:
 
-```
+```text
 data/raw/
   train.csv
+  sample_submission.csv
   train_images/
   test_images/
 ```
 
 ---
 
-## Обучение
+## Train
 
-Запуск:
+### 1) Подготовка данных
+
+Перед обучением должны быть доступны данные в `data/raw`.
+Если ты не уверен — просто запусти:
+
+```bash
+uv run python -m paddy_disease.commands download_data
+```
+
+### 2) Запуск обучения
+
+Базовый запуск:
 
 ```bash
 uv run python -m paddy_disease.commands train
 ```
 
-Так же можно написать с кастомными параметрами м помощью Hydra override:
+Запуск с параметрами через Hydra overrides:
 
 ```bash
 uv run python -m paddy_disease.commands train train.epochs=1 data.loader.batch_size=8 data.loader.num_workers=0
 ```
 
-Выходы:
+### 3) Артефакты обучения
 
-- `models/checkpoints/` — чекпоинты
-- `plots/` — графики
-- `mlruns/` — локальное хранилище MLflow
+После обучения появляются:
 
----
+- `models/checkpoints/` — чекпоинты (`last.ckpt`, `epoch=...-val_acc=....ckpt`)
+- `plots/` — графики (`train_loss.png`, `val_loss.png`, `val_acc.png`, `val_f1_macro.png`)
+- `mlruns/` — локальное хранилище MLflow (метрики, параметры, артефакты)
 
-## Логирование (MLflow + графики)
-
-В проекте логируются:
-
-- метрики: `train_loss`, `val_loss`, `val_acc`, `val_f1_macro`
-- гиперпараметры (Hydra config)
-- `git commit id`
-
-Если нужно поднять локально MLflow UI:
+### 4) Просмотр метрик (MLflow UI)
 
 ```bash
 uv run mlflow ui --backend-store-uri ./mlruns --port 8080
 ```
 
-Открыть: `http://127.0.0.1:8080`
+Открыть:
+
+- `http://127.0.0.1:8080`
 
 ---
 
-## Экспорт модели
+## Production preparation
 
-### ONNX
+Этот раздел описывает подготовку обученной модели к “продакшену”: экспорт, упаковка артефактов, подготовка Triton.
+
+### 1) Экспорт ONNX
 
 ```bash
 uv run python -m paddy_disease.commands export_onnx
 ```
 
-### TensorRT
+Ожидаемые выходы:
 
-Требуется хост с GPU:
+- `models/onnx/paddy_resnet34.onnx`
+- возможно `models/onnx/paddy_resnet34.onnx.data` (если модель сохраняется с внешними весами)
+
+### 2) Экспорт TensorRT (опционально, нужен GPU)
+
+> Требуется машина с NVIDIA GPU и `trtexec` в PATH (обычно делается в контейнере/на GPU-хосте).
 
 ```bash
 uv run python -m paddy_disease.commands export_tensorrt
 ```
 
+Ожидаемые выходы:
+
+- `models/trt/paddy_resnet34.engine`
+
+### 3) Экспорт labels.json (индекс → человекочитаемый класс)
+
+Нужно для инференса/веба, чтобы показывать имена классов:
+
+```bash
+uv run python -m paddy_disease.commands export_labels
+```
+
+Выход:
+
+- `models/labels.json`
+
+### 4) Комплектация поставки (что нужно для инференса)
+
+Минимальный набор артефактов для запуска инференса через Triton:
+
+- `triton/model_repository/paddy_resnet34/config.pbtxt`
+- `triton/model_repository/paddy_resnet34/1/paddy_resnet34.onnx`
+- `triton/model_repository/paddy_resnet34/1/paddy_resnet34.onnx.data` (если существует)
+- `models/labels.json` (для перевода индекса в имя класса)
+
 ---
 
-## Triton (HTTP) + Web UI
+## Infer
 
-### Подготовка model repository Triton
+Инференс запускается через **Triton Inference Server (HTTP)** + клиент/веб.
 
-Сначала нужно скопировать .onnx и .onnx.data в директорию /1. Получится структура:
+### 1) Подготовка Triton model repository
 
+Перед запуском Triton нужно скопировать ONNX в версионную директорию `/1`:
+
+```bash
+mkdir -p triton/model_repository/paddy_resnet34/1
+cp -f models/onnx/paddy_resnet34.onnx triton/model_repository/paddy_resnet34/1/
+cp -f models/onnx/paddy_resnet34.onnx.data triton/model_repository/paddy_resnet34/1/ 2>/dev/null || true
 ```
+
+Ожидаемая структура:
+
+```text
 triton/model_repository/paddy_resnet34/
   1/
     paddy_resnet34.onnx
@@ -285,36 +340,38 @@ triton/model_repository/paddy_resnet34/
   config.pbtxt
 ```
 
-### Запуск Triton
+### 2) Запуск Triton (Docker)
 
 ```bash
 sudo docker compose up -d triton
 sudo docker logs -f triton_paddy
 ```
 
-Проверка readiness:
+Проверка readiness (должно вернуть HTTP 200):
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/v2/health/ready
-# Ожидаем 200, тогда все работает
 ```
 
-Проверка модели:
+Проверка, что модель подхватилась:
 
 ```bash
 curl -s http://localhost:8000/v2/models/paddy_resnet34 | head
-# Ожидаем параметры модели, скопированной в triton/model_repository/paddy_resnet34/1/
 ```
 
-### Labels (индекс -> класс)
+### 3) Формат входных данных
 
-Это понадобится для инференса, чтобы класс был человекочитаем:
+На вход инференса подаётся **одно изображение растения (jpg/png)**.
+В web UI оно загружается через форму. Внутри клиент делает:
 
-```bash
-uv run python -m paddy_disease.commands export_labels
-```
+- Resize до `224x224`
+- Normalize (ImageNet mean/std)
+- NCHW float32
+- запрос в Triton на выход `logits`
 
-### Web UI
+### 4) Web UI (инференс через Triton)
+
+Запуск веб-приложения:
 
 ```bash
 uv run python -m paddy_disease.commands web --port=8081
@@ -323,6 +380,11 @@ uv run python -m paddy_disease.commands web --port=8081
 Открыть:
 
 - `http://localhost:8081/`
+
+В интерфейсе:
+
+- выбираешь изображение
+- получаешь картинку + **вердикт** (класс) + top-k вероятностей
 
 ---
 
