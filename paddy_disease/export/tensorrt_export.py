@@ -1,16 +1,7 @@
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 
-
-@dataclass
-class ExportTensorRTConfig:
-    onnx_path: str
-    engine_path: str
-    fp16: bool = True
-    max_batch: int = 8
-    image_size: int = 224
-    workspace_mb: int = 2048
+from paddy_disease.config import ExportTensorRTConfig
 
 
 def export_tensorrt_main(cfg: ExportTensorRTConfig) -> None:

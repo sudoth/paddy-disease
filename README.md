@@ -56,8 +56,8 @@ Kaggle competition: [`paddy-disease-classification`](https://www.kaggle.com/comp
 - **Преобразования**:
   - Resize до `224×224`
   - Перевод в тензор
-  - Нормализация ImageNet (`mean/std`)
-  - Различные аугментации, такие как .
+  - Различные аугментации, такие как повороты, флипы, вращения, изменения яркости, контарстности и насыщения.
+  - Нормализация посчитанная на ImageNet
 
 ### Архитектура модели
 
@@ -257,8 +257,6 @@ uv run mlflow ui --backend-store-uri ./mlruns --port 8080
 ```bash
 uv run python -m paddy_disease.commands export_onnx
 ```
-
-> Для Triton batching ONNX должен иметь динамический batch и на выходе (`[-1, 10]`).
 
 ### TensorRT
 

@@ -1,20 +1,15 @@
 from torchvision import transforms
 
+from paddy_disease.config import TransformsConfig
+
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
 
-def build_train_transform(image_size: int = 224) -> transforms.Compose:
-    """
-    Train data transformation
-
-    :param image_size: Description
-    :type image_size: int
-    :return: Description
-    :rtype: Compose
-    """
-    return transforms.Compose(
-        [
+def build_train_transform(cfg: TransformsConfig) -> transforms.Compose:
+    aug = []
+    if cfg.use_augmentations:
+        aug = [
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
             transforms.RandomChoice(
@@ -31,25 +26,22 @@ def build_train_transform(image_size: int = 224) -> transforms.Compose:
                     ),
                 ]
             ),
-            transforms.Resize((image_size, image_size)),
+        ]
+
+    return transforms.Compose(
+        [
+            *aug,
+            transforms.Resize((cfg.image_size, cfg.image_size)),
             transforms.ToTensor(),
             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
         ]
     )
 
 
-def build_test_transform(image_size: int = 224) -> transforms.Compose:
-    """
-    Test data transform
-
-    :param image_size: Description
-    :type image_size: int
-    :return: Description
-    :rtype: Compose
-    """
+def build_test_transform(cfg: TransformsConfig) -> transforms.Compose:
     return transforms.Compose(
         [
-            transforms.Resize((image_size, image_size)),
+            transforms.Resize((cfg.image_size, cfg.image_size)),
             transforms.ToTensor(),
             transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD),
         ]

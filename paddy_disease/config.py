@@ -1,14 +1,32 @@
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, field
+
+
+@dataclass
+class SplitConfig:
+    val_size: float = 0.05
+    seed: int = 42
+
+
+@dataclass
+class LoaderConfig:
+    batch_size: int = 32
+    num_workers: int = 4
+    pin_memory: bool = True
+    shuffle_train: bool = True
+
+
+@dataclass
+class TransformsConfig:
+    image_size: int = 224
+    use_augmentations: bool = True
 
 
 @dataclass
 class DataConfig:
-    raw_dir: Path
-    batch_size: int
-    num_workers: int
-    val_size: float
-    image_size: int
+    raw_dir: str = "data/raw"
+    split: SplitConfig = field(default_factory=SplitConfig)
+    loader: LoaderConfig = field(default_factory=LoaderConfig)
+    transforms: TransformsConfig = field(default_factory=TransformsConfig)
 
 
 @dataclass
@@ -47,6 +65,25 @@ class CheckpointConfig:
     save_top_k: int
     save_last: bool
     filename: str
+
+
+@dataclass
+class ExportOnnxConfig:
+    ckpt_path: str
+    onnx_path: str
+    opset: int = 17
+    image_size: int = 224
+    dynamic_batch: bool = True
+
+
+@dataclass
+class ExportTensorRTConfig:
+    onnx_path: str
+    engine_path: str
+    fp16: bool = True
+    max_batch: int = 8
+    image_size: int = 224
+    workspace_mb: int = 2048
 
 
 @dataclass

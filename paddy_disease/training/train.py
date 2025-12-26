@@ -16,7 +16,7 @@ def train_main(cfg: AppConfig) -> None:
     ensure_data()
     pl.seed_everything(cfg.seed, workers=True)
 
-    dm = PaddyDataModule(data_cfg=cfg.data, seed=cfg.seed)
+    dm = PaddyDataModule(data_cfg=cfg.data)
     model = PaddyLightningModule(model_cfg=cfg.model, optim_cfg=cfg.optim)
 
     repo_root = Path(__file__).parents[2]

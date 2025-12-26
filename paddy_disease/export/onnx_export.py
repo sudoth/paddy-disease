@@ -1,20 +1,10 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 import onnx
 import torch
 
-from paddy_disease.config import ModelConfig, OptimConfig
+from paddy_disease.config import ExportOnnxConfig, ModelConfig, OptimConfig
 from paddy_disease.training.lightning_module import PaddyLightningModule
-
-
-@dataclass
-class ExportOnnxConfig:
-    ckpt_path: str
-    onnx_path: str
-    opset: int = 17
-    image_size: int = 224
-    dynamic_batch: bool = True
 
 
 def export_onnx_main(
@@ -61,4 +51,4 @@ def export_onnx_main(
 
     model = onnx.load(str(out_path))
     onnx.checker.check_model(model)
-    print(f"Exported ONNX in {out_path}")
+    print(f"Exported ONNX to {out_path}")

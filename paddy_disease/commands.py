@@ -10,13 +10,18 @@ from paddy_disease.config import (
     AppConfig,
     CheckpointConfig,
     DataConfig,
+    ExportOnnxConfig,
+    ExportTensorRTConfig,
+    LoaderConfig,
     LoggingConfig,
     ModelConfig,
     OptimConfig,
+    SplitConfig,
     TrainConfig,
+    TransformsConfig,
 )
-from paddy_disease.export.onnx_export import ExportOnnxConfig, export_onnx_main
-from paddy_disease.export.tensorrt_export import ExportTensorRTConfig, export_tensorrt_main
+from paddy_disease.export.onnx_export import export_onnx_main
+from paddy_disease.export.tensorrt_export import export_tensorrt_main
 from paddy_disease.inference.labels_export import export_labels
 from paddy_disease.training.train import train_main
 from paddy_disease.web.app import app
@@ -40,7 +45,13 @@ class Commands:
         data = OmegaConf.to_container(cfg, resolve=True)
         assert isinstance(data, dict)
 
-        data_cfg = DataConfig(**data["data"])
+        data_dict = data["data"]
+        data_cfg = DataConfig(
+            raw_dir=data_dict["raw_dir"],
+            split=SplitConfig(**data_dict["split"]),
+            loader=LoaderConfig(**data_dict["loader"]),
+            transforms=TransformsConfig(**data_dict["transforms"]),
+        )
         model_cfg = ModelConfig(**data["model"])
         optim_cfg = OptimConfig(**data["optim"])
         train_cfg = TrainConfig(**data["train"])
@@ -86,19 +97,13 @@ class Commands:
         return ExportTensorRTConfig(**data)
 
     def export_onnx(self, *overrides: str) -> None:
-        """
-        Usage:
-        uv run python -m paddy_disease.commands export_onnx
-        uv run python -m paddy_disease.commands export_onnx \
-            export/onnx.ckpt_path=models/checkpoints/last.ckpt
-        """
-        app_cfg = self._load_cfg([])
+        app_cfg = self._load_cfg(list(overrides))
         export_cfg = self._load_export_onnx_cfg(list(overrides))
         export_onnx_main(app_cfg.model, app_cfg.optim, export_cfg)
 
     def export_tensorrt(self, *overrides: str) -> None:
-        cfg = self._load_export_tensorrt_cfg(list(overrides))
-        export_tensorrt_main(cfg)
+        export_cfg = self._load_export_tensorrt_cfg(list(overrides))
+        export_tensorrt_main(export_cfg)
 
     def export_labels(self) -> None:
         export_labels()

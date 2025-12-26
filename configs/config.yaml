@@ -6,5 +6,7 @@ defaults:
   - train: default
   - logging: mlflow
   - checkpoint: default
+  - export/onnx
+  - export/tensorrt
 
 seed: 42
