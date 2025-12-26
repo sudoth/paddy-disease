@@ -1,4 +1,4 @@
 [core]
-    remote = localstore
-['remote "localstore"']
-    url = /home/sudoth/dvc-storage/paddy-disease
+    remote = local
+['remote "local"']
+    url = ../.dvc_storage
