@@ -34,6 +34,9 @@ def export_onnx_main(
     )
     module.eval()
 
+    model = module.model
+    model.eval()
+
     dummy = torch.randn(1, 3, export_cfg.image_size, export_cfg.image_size)
 
     input_names = ["input"]
@@ -44,7 +47,7 @@ def export_onnx_main(
         dynamic_axes = {"input": {0: "batch"}, "logits": {0: "batch"}}
 
     torch.onnx.export(
-        module,
+        model,
         dummy,
         str(out_path),
         export_params=True,
@@ -53,6 +56,7 @@ def export_onnx_main(
         input_names=input_names,
         output_names=output_names,
         dynamic_axes=dynamic_axes,
+        dynamo=False,
     )
 
     model = onnx.load(str(out_path))
