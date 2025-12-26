@@ -1,0 +1,5 @@
+raw_dir: data/raw
+batch_size: 32
+num_workers: 4
+val_size: 0.05
+image_size: 224

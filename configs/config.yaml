@@ -1,0 +1,8 @@
+defaults:
+  - _self_
+  - data: paddy
+  - model: resnet34
+  - optim: sgd
+  - train: default
+
+seed: 42
