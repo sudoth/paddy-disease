@@ -12,16 +12,15 @@ class SavePlotsCallback(pl.Callback):
             "train_loss": [],
             "val_loss": [],
             "val_acc": [],
+            "val_f1_macro": [],
         }
 
     def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         metrics = trainer.callback_metrics
-        if "train_loss" in metrics:
-            self.history["train_loss"].append(float(metrics["train_loss"].cpu()))
-        if "val_loss" in metrics:
-            self.history["val_loss"].append(float(metrics["val_loss"].cpu()))
-        if "val_acc" in metrics:
-            self.history["val_acc"].append(float(metrics["val_acc"].cpu()))
+
+        for key in self.history.keys():
+            if key in metrics and metrics[key] is not None:
+                self.history[key].append(float(metrics[key].detach().cpu()))
 
     def on_fit_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         self.out_dir.mkdir(parents=True, exist_ok=True)

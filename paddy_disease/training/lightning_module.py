@@ -39,10 +39,10 @@ class PaddyLightningModule(pl.LightningModule):
 
         self.optim_cfg = optim_cfg
 
-    def forward(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.model(x)
 
-    def training_step(self, batch, batch_idx: int, *args, **kwargs) -> torch.Tensor:
+    def training_step(self, batch, batch_idx: int) -> torch.Tensor:
         x, y, _ids = batch
         logits = self(x)
         loss = self.criterion(logits, y)
@@ -55,7 +55,7 @@ class PaddyLightningModule(pl.LightningModule):
         self.log("train_acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
-    def validation_step(self, batch, batch_idx: int, *args, **kwargs) -> None:
+    def validation_step(self, batch, batch_idx: int) -> None:
         x, y, _ids = batch
         logits = self(x)
         loss = self.criterion(logits, y)

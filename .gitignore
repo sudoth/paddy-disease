@@ -218,8 +218,6 @@ models/onnx/*.onnx.data
 models/trt/*.plan
 models/labels.json
 
-plots/*.png
-
 triton/model_repository/paddy_resnet34/1/*.onnx
 triton/model_repository/paddy_resnet34/1/*.data
 
