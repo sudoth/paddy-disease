@@ -90,11 +90,16 @@ uv run python -m paddy_disease.commands export_onnx
 # 6) Экспорт labels (индекс -> имя класса, нужно для инференса)
 uv run python -m paddy_disease.commands export_labels
 
-# 7) Triton в Docker
+# 7) Копирование модели для Triton
+cp -f models/onnx/paddy_resnet34.onnx triton/model_repository/paddy_resnet34/1/
+# если появился внешний файл весов:
+cp -f models/onnx/paddy_resnet34.onnx.data triton/model_repository/paddy_resnet34/1/
+
+# 8) Triton в Docker
 sudo docker compose up -d triton
 curl -sf http://localhost:8000/v2/health/ready >/dev/null && echo "READY"
 
-# 8) Web UI
+# 9) Web UI
 uv run python -m paddy_disease.commands web --port=8081
 # открыть http://localhost:8081/
 ```
@@ -103,30 +108,28 @@ uv run python -m paddy_disease.commands web --port=8081
 
 ## Структура репозитория
 
-Артефакты (данные/модели/логи) в git **не коммитятся**.
-
 ```
 paddy_disease/
-  commands.py                 # CLI (Fire + Hydra compose)
+  commands.py                 # CLI
   config.py                   # dataclasses конфигов
-  data/                       # датасет + loaders + transforms
+  data/                       # датасет и loaders и transforms
   training/
     datamodule.py             # LightningDataModule
     lightning_module.py       # LightningModule
-    train.py                  # train_main()
+    train.py                  # train()
     plot_callback.py          # сохранение графиков
   export/
     onnx_export.py            # export_onnx_main()
-    tensorrt_export.py        # export_tensorrt_main() (через trtexec)
-    tensorrt.sh               # shell wrapper для trtexec
+    tensorrt_export.py        # export_tensorrt_main()
+    tensorrt.sh
   inference/
-    triton_client.py          # HTTP Triton client + preprocess + postprocess
+    triton_client.py          # HTTP Triton client
     labels_export.py          # export_labels -> models/labels.json
   utils/
     git.py                    # git commit hash для логирования, для понимания версии кода
 
 configs/
-  config.yaml                 # root config
+  config.yaml
   data/*.yaml
   model/*.yaml
   optim/*.yaml
@@ -141,7 +144,7 @@ configs/
 triton/
   model_repository/
     paddy_resnet34/
-      1/                      # model files placed here (local runtime)
+      1/                      # модель нужно положить сюда для подъема тритона
       config.pbtxt
 
 models/
@@ -149,7 +152,7 @@ models/
   onnx/        (.gitkeep)
   trt/         (.gitkeep)
 
-plots/         # графики (png игнорируются)
+plots/         # графики
 ```
 
 ---
@@ -158,7 +161,7 @@ plots/         # графики (png игнорируются)
 
 ### Требования
 
-- Python 3.11+ (тестировалось на Python 3.13)
+- Python 3.13
 - `uv`
 - `git`
 - `docker` (для Triton)
