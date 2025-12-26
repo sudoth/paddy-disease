@@ -1,0 +1,46 @@
+[project]
+name = "paddy-disease"
+version = "0.1.0"
+description = "MLOps project: Paddy Disease Classification with ResNet34"
+readme = "README.md"
+authors = [
+    { name = "sudoth", email = "kotelnikov.iv@phystech.edu" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "fire>=0.7.1",
+    "hydra-core>=1.3.2",
+    "omegaconf>=2.3.0",
+]
+
+[project.scripts]
+paddy-disease = "paddy_disease.commands:main"
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "."
+module-name = "paddy_disease"
+
+[dependency-groups]
+dev = [
+    "black>=25.12.0",
+    "flake8>=7.3.0",
+    "isort>=7.0.0",
+    "pre-commit>=4.5.1",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+exclude = [".venv", ".git", "__pycache__", "build", "dist"]
