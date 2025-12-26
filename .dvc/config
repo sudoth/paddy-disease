@@ -1,4 +1,4 @@
 [core]
-    remote = gdrive
-['remote "gdrive"']
-    url = gdrive://1oF2sUCHU5b9BvWnb7bP4kWeCXo1ZBZxe
+    remote = localstore
+['remote "localstore"']
+    url = /home/sudoth/dvc-storage/paddy-disease
