@@ -26,7 +26,6 @@ class PaddyDataModule(pl.LightningDataModule):
 
     @property
     def raw_dir(self) -> Path:
-        # data_cfg.raw_dir может прийти как Path (в идеале) или как str — приведём к Path
         return Path(self.data_cfg.raw_dir)
 
     def setup(self, stage: str | None = None) -> None:

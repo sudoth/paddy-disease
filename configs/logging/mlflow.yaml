@@ -1,0 +1,4 @@
+tracking_uri: "file:./mlruns"
+experiment_name: "paddy-disease"
+run_name: null
+log_model: false

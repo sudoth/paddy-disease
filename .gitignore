@@ -208,3 +208,5 @@ __marimo__/
 
 *.my
 .dvc_storage
+mlruns/
+plots/*.png

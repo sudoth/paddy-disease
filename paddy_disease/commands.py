@@ -5,7 +5,14 @@ import fire
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
-from paddy_disease.config import AppConfig, DataConfig, ModelConfig, OptimConfig, TrainConfig
+from paddy_disease.config import (
+    AppConfig,
+    DataConfig,
+    LoggingConfig,
+    ModelConfig,
+    OptimConfig,
+    TrainConfig,
+)
 from paddy_disease.training.train import train_main
 
 
@@ -31,6 +38,7 @@ class Commands:
         model_cfg = ModelConfig(**data["model"])
         optim_cfg = OptimConfig(**data["optim"])
         train_cfg = TrainConfig(**data["train"])
+        logging_cfg = LoggingConfig(**data["logging"])
 
         return AppConfig(
             seed=int(data["seed"]),
@@ -38,6 +46,7 @@ class Commands:
             model=model_cfg,
             optim=optim_cfg,
             train=train_cfg,
+            logging=logging_cfg,
         )
 
     def train(self, *overrides: str) -> None:

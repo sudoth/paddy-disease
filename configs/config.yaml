@@ -4,5 +4,6 @@ defaults:
   - model: resnet34
   - optim: sgd
   - train: default
+  - logging: mlflow
 
 seed: 42

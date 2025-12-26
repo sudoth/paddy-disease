@@ -32,9 +32,18 @@ class TrainConfig:
 
 
 @dataclass
+class LoggingConfig:
+    tracking_uri: str
+    experiment_name: str
+    run_name: str | None
+    log_model: bool
+
+
+@dataclass
 class AppConfig:
     seed: int
     data: DataConfig
     model: ModelConfig
     optim: OptimConfig
     train: TrainConfig
+    logging: LoggingConfig
