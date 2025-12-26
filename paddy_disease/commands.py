@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import fire
+import uvicorn
 from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
@@ -16,7 +17,9 @@ from paddy_disease.config import (
 )
 from paddy_disease.export.onnx_export import ExportOnnxConfig, export_onnx_main
 from paddy_disease.export.tensorrt_export import ExportTensorRTConfig, export_tensorrt_main
+from paddy_disease.inference.labels_export import export_labels
 from paddy_disease.training.train import train_main
+from paddy_disease.web.app import app
 
 
 @dataclass
@@ -97,9 +100,15 @@ class Commands:
         cfg = self._load_export_tensorrt_cfg(list(overrides))
         export_tensorrt_main(cfg)
 
+    def export_labels(self) -> None:
+        export_labels()
+
     def train(self, *overrides: str) -> None:
         cfg = self._load_cfg(list(overrides))
         train_main(cfg)
+
+    def web(self, host: str = "0.0.0.0", port: int = 8081) -> None:
+        uvicorn.run(app, host=host, port=port)
 
 
 def main() -> None:
