@@ -20,6 +20,7 @@ from paddy_disease.config import (
     TrainConfig,
     TransformsConfig,
 )
+from paddy_disease.data.download import download_data
 from paddy_disease.export.onnx_export import export_onnx_main
 from paddy_disease.export.tensorrt_export import export_tensorrt_main
 from paddy_disease.inference.labels_export import export_labels
@@ -96,6 +97,10 @@ class Commands:
 
         return ExportTensorRTConfig(**data)
 
+    def download_data(self, *overrides: str) -> None:
+        cfg = self._load_cfg(list(overrides))
+        download_data(cfg.data)
+
     def export_onnx(self, *overrides: str) -> None:
         app_cfg = self._load_cfg(list(overrides))
         export_cfg = self._load_export_onnx_cfg(list(overrides))
@@ -105,8 +110,9 @@ class Commands:
         export_cfg = self._load_export_tensorrt_cfg(list(overrides))
         export_tensorrt_main(export_cfg)
 
-    def export_labels(self) -> None:
-        export_labels()
+    def export_labels(self, *overrides: str) -> None:
+        cfg = self._load_cfg(list(overrides))
+        export_labels(cfg.data)
 
     def train(self, *overrides: str) -> None:
         cfg = self._load_cfg(list(overrides))

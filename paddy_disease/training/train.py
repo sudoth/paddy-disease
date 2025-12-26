@@ -13,7 +13,7 @@ from paddy_disease.utils.git import get_git_commit
 
 
 def train_main(cfg: AppConfig) -> None:
-    ensure_data()
+    ensure_data(cfg.data)
     pl.seed_everything(cfg.seed, workers=True)
 
     dm = PaddyDataModule(data_cfg=cfg.data)

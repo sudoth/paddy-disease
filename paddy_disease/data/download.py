@@ -4,13 +4,11 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from paddy_disease.config import DataConfig
+
 
 @dataclass(frozen=True)
 class DatasetPaths:
-    """
-    Class for dataset path.
-    """
-
     raw_dir: Path
     train_images: Path
     test_images: Path
@@ -18,16 +16,8 @@ class DatasetPaths:
     sample_submission_csv: Path
 
 
-def get_dataset_paths(repo_root: Path) -> DatasetPaths:
-    """
-    Dataset path extraction function.
-
-    :param repo_root: Description
-    :type repo_root: Path
-    :return: Description
-    :rtype: DatasetPaths
-    """
-    raw_dir = repo_root / "data" / "raw"
+def get_dataset_paths(raw_dir: Path) -> DatasetPaths:
+    raw_dir = raw_dir.resolve()
     return DatasetPaths(
         raw_dir=raw_dir,
         train_images=raw_dir / "train_images",
@@ -38,14 +28,6 @@ def get_dataset_paths(repo_root: Path) -> DatasetPaths:
 
 
 def dataset_is_present(paths: DatasetPaths) -> bool:
-    """
-    Cheks if dataset is already exists.
-
-    :param paths: Description
-    :type paths: DatasetPaths
-    :return: Description
-    :rtype: bool
-    """
     return (
         paths.train_images.exists()
         and paths.test_images.exists()
@@ -54,27 +36,26 @@ def dataset_is_present(paths: DatasetPaths) -> bool:
     )
 
 
-def download_data(repo_root: Path) -> None:
+def download_data(data_cfg: DataConfig) -> None:
     """
     Download Kaggle competition data and put it into data/raw/.
 
-    Requires Kaggle API token in your enviroment.
+    Requires Kaggle API token in your environment.
     And you must have accepted the competition rules on Kaggle website once.
     """
-    paths = get_dataset_paths(repo_root)
+    paths = get_dataset_paths(Path(data_cfg.raw_dir))
     paths.raw_dir.mkdir(parents=True, exist_ok=True)
 
     if dataset_is_present(paths):
-        print("Data already present in data/raw/.")
+        print(f"Data already present in {paths.raw_dir}.")
         return
 
-    tmp_dir = repo_root / "data" / "_tmp_kaggle"
+    tmp_dir = paths.raw_dir.parent / "_tmp_kaggle"
     if tmp_dir.exists():
         shutil.rmtree(tmp_dir)
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     print("Downloading dataset from Kaggle")
-    # --force to re-download if partial file exists
     subprocess.run(
         [
             "kaggle",
@@ -90,22 +71,27 @@ def download_data(repo_root: Path) -> None:
     )
 
     zips = sorted(tmp_dir.glob("*.zip"))
+    if not zips:
+        raise FileNotFoundError(f"No .zip files downloaded into {tmp_dir}")
     zip_path = zips[0]
     print(f"Extracting: {zip_path.name}")
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(tmp_dir)
 
-    # In the zip: train_images/, test_images/, train.csv, sample_submission.csv
     expected = {
         "train_images": tmp_dir / "train_images",
         "test_images": tmp_dir / "test_images",
         "train.csv": tmp_dir / "train.csv",
         "sample_submission.csv": tmp_dir / "sample_submission.csv",
     }
+    missing = [k for k, p in expected.items() if not p.exists()]
+    if missing:
+        raise FileNotFoundError(f"Missing {missing} in {tmp_dir}")
 
-    print("Moving files into data/raw/ ...")
-    # remove partial old data if exists
+    print(f"Moving files in {paths.raw_dir}")
+
+    # remove old data if exists
     if paths.train_images.exists():
         shutil.rmtree(paths.train_images)
     if paths.test_images.exists():
@@ -121,4 +107,4 @@ def download_data(repo_root: Path) -> None:
     shutil.move(str(expected["sample_submission.csv"]), str(paths.sample_submission_csv))
 
     shutil.rmtree(tmp_dir)
-    print("Download complete. Data is in data/raw/.")
+    print(f"Download complete. Data is in {paths.raw_dir}.")

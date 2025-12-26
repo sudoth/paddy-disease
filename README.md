@@ -82,7 +82,7 @@ uv run pre-commit run -a
 uv run python -m paddy_disease.commands download_data
 
 # 4) Обучение
-uv run python -m paddy_disease.commands train train.epochs=1 data.batch_size=8 data.num_workers=0
+uv run python -m paddy_disease.commands train
 
 # 5) Экспорт ONNX
 uv run python -m paddy_disease.commands export_onnx
@@ -221,7 +221,7 @@ uv run python -m paddy_disease.commands train
 Так же можно написать с кастомными параметрами м помощью Hydra override:
 
 ```bash
-uv run python -m paddy_disease.commands train train.epochs=5 data.batch_size=32 optim.lr=1e-3
+uv run python -m paddy_disease.commands train train.epochs=1 data.loader.batch_size=8 data.loader.num_workers=0
 ```
 
 Выходы:
@@ -339,9 +339,3 @@ uv run python -m paddy_disease.commands --help
 - `export_tensorrt`
 - `export_labels`
 - `web`
-
-Пример overrides:
-
-```bash
-uv run python -m paddy_disease.commands train train.epochs=1 data.batch_size=8
-```
