@@ -15,6 +15,7 @@ from paddy_disease.config import (
     TrainConfig,
 )
 from paddy_disease.export.onnx_export import ExportOnnxConfig, export_onnx_main
+from paddy_disease.export.tensorrt_export import ExportTensorRTConfig, export_tensorrt_main
 from paddy_disease.training.train import train_main
 
 
@@ -61,13 +62,25 @@ class Commands:
             cfg = compose(config_name="export/onnx", overrides=overrides)
 
         data = OmegaConf.to_container(cfg, resolve=True)
-        assert isinstance(data, dict)
 
-        # гидра возвращает {"export": {...}}
         if "export" in data and isinstance(data["export"], dict):
             data = data["export"]
 
-        return ExportOnnxConfig(**data)  # type: ignore[arg-type]
+        return ExportOnnxConfig(**data)
+
+    def _load_export_tensorrt_cfg(self, overrides: list[str] | None = None) -> ExportTensorRTConfig:
+        overrides = overrides or []
+        config_dir = self._config_dir_abs()
+
+        with initialize_config_dir(config_dir=config_dir, version_base=None):
+            cfg = compose(config_name="export/tensorrt", overrides=overrides)
+
+        data = OmegaConf.to_container(cfg, resolve=True)
+
+        if "export" in data and isinstance(data["export"], dict):
+            data = data["export"]
+
+        return ExportTensorRTConfig(**data)
 
     def export_onnx(self, *overrides: str) -> None:
         """
@@ -79,6 +92,10 @@ class Commands:
         app_cfg = self._load_cfg([])
         export_cfg = self._load_export_onnx_cfg(list(overrides))
         export_onnx_main(app_cfg.model, app_cfg.optim, export_cfg)
+
+    def export_tensorrt(self, *overrides: str) -> None:
+        cfg = self._load_export_tensorrt_cfg(list(overrides))
+        export_tensorrt_main(cfg)
 
     def train(self, *overrides: str) -> None:
         cfg = self._load_cfg(list(overrides))

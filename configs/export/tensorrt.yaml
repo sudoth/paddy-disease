@@ -1,0 +1,6 @@
+onnx_path: models/onnx/paddy_resnet34.onnx
+engine_path: models/trt/paddy_resnet34.plan
+fp16: true
+max_batch: 8
+image_size: 224
+workspace_mb: 2048

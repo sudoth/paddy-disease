@@ -1,8 +1,0 @@
-model:
-  num_classes: 10
-  dropout: 0.1
-  pretrained: true
-optim:
-  lr: 0.001
-  momentum: 0.9
-  weight_decay: 0.0
