@@ -1,0 +1,6 @@
+dirpath: models/checkpoints
+monitor: val_acc
+mode: max
+save_top_k: 1
+save_last: true
+filename: "{epoch:02d}-{val_acc:.4f}"

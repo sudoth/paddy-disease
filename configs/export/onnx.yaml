@@ -1,0 +1,5 @@
+ckpt_path: models/checkpoints/last.ckpt
+onnx_path: models/onnx/paddy_resnet34.onnx
+opset: 17
+image_size: 224
+dynamic_batch: true

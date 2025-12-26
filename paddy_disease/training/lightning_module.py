@@ -11,7 +11,6 @@ class PaddyLightningModule(pl.LightningModule):
     def __init__(self, model_cfg: ModelConfig, optim_cfg: OptimConfig) -> None:
         super().__init__()
 
-        # Сохраняем гиперы в "безопасном" виде (не frozen dataclass!)
         self.save_hyperparameters(
             {
                 "model": {
@@ -51,8 +50,9 @@ class PaddyLightningModule(pl.LightningModule):
         preds = torch.argmax(logits, dim=1)
         self.train_acc(preds, y)
 
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("train/acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
+        bs = x.size(0)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=bs)
+        self.log("train_acc", self.train_acc, on_step=False, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx: int, *args, **kwargs) -> None:
@@ -64,9 +64,10 @@ class PaddyLightningModule(pl.LightningModule):
         self.val_acc(preds, y)
         self.val_f1(preds, y)
 
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("val/acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("val/f1_macro", self.val_f1, on_step=False, on_epoch=True, prog_bar=True)
+        bs = x.size(0)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=bs)
+        self.log("val_acc", self.val_acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val_f1_macro", self.val_f1, on_step=False, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         return torch.optim.SGD(

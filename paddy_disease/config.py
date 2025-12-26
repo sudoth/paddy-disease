@@ -40,6 +40,16 @@ class LoggingConfig:
 
 
 @dataclass
+class CheckpointConfig:
+    dirpath: str
+    monitor: str
+    mode: str
+    save_top_k: int
+    save_last: bool
+    filename: str
+
+
+@dataclass
 class AppConfig:
     seed: int
     data: DataConfig
@@ -47,3 +57,4 @@ class AppConfig:
     optim: OptimConfig
     train: TrainConfig
     logging: LoggingConfig
+    checkpoint: CheckpointConfig

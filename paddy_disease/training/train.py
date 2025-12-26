@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import MLFlowLogger
 
 from paddy_disease.config import AppConfig
@@ -26,13 +27,24 @@ def train_main(cfg: AppConfig) -> None:
         run_name=cfg.logging.run_name,
     )
 
-    # log git commit id
     commit = get_git_commit(repo_root)
     if commit is not None:
         mlf_logger.log_hyperparams({"git_commit": commit})
 
+    ckpt_dir = Path(cfg.checkpoint.dirpath)
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+
+    checkpoint_cb = ModelCheckpoint(
+        dirpath=str(ckpt_dir),
+        monitor=cfg.checkpoint.monitor,
+        mode=cfg.checkpoint.mode,
+        save_top_k=cfg.checkpoint.save_top_k,
+        save_last=cfg.checkpoint.save_last,
+        filename=cfg.checkpoint.filename,
+    )
+
     plots_dir = repo_root / "plots"
-    callbacks = [SavePlotsCallback(plots_dir)]
+    callbacks = [SavePlotsCallback(plots_dir), checkpoint_cb]
 
     trainer = pl.Trainer(
         max_epochs=cfg.train.epochs,
